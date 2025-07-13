@@ -1,6 +1,8 @@
 module github.com/portainer/portainer
 
-go 1.24.4
+go 1.24.0
+
+toolchain go1.24.4
 
 require (
 	github.com/Masterminds/semver v1.5.0

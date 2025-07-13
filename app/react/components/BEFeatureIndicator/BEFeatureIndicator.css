@@ -1,5 +1,5 @@
 .be-indicator {
-  @apply border border-solid border-gray-6;
+  @apply border border-solid border-gray-6 opacity-25;
   @apply text-xs text-gray-6;
   border-radius: 15px;
   padding: 5px 10px;
