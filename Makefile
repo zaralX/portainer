@@ -5,9 +5,9 @@ PLATFORM=$(shell go env GOOS)
 ARCH=$(shell go env GOARCH)
 
 # build target, can be one of "production", "testing", "development"
-ENV=development
+ENV=production
 WEBPACK_CONFIG=webpack/webpack.$(ENV).js
-TAG=local
+TAG=latest
 
 SWAG=go run github.com/swaggo/swag/cmd/swag@v1.16.2
 GOTESTSUM=go run gotest.tools/gotestsum@latest
@@ -32,7 +32,7 @@ build-server: init-dist ## Build the server binary
 	./build/build_binary.sh "$(PLATFORM)" "$(ARCH)"
 
 build-image: build-all ## Build the Portainer image locally
-	docker buildx build --load -t portainerci/portainer-ce:$(TAG) -f build/linux/Dockerfile .
+	docker buildx build --load -t zaralx/portainer-ce:$(TAG) -f build/linux/Dockerfile .
 
 build-storybook: ## Build and serve the storybook files
 	yarn storybook:build

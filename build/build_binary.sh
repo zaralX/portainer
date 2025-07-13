@@ -40,7 +40,6 @@ if [ "${SKIP_GO_GET:-false}" = false ]; then
   go get -t -v ./...
 fi
 
-
 ldflags="-s -X 'github.com/portainer/liblicense.LicenseServerBaseURL=https://api.portainer.io' \
 -X 'github.com/portainer/portainer/pkg/build.BuildNumber=${BUILDNUMBER}' \
 -X 'github.com/portainer/portainer/pkg/build.ImageTag=${CONTAINER_IMAGE_TAG}' \

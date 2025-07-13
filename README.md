@@ -12,6 +12,22 @@ Portainer consists of a single container that can run on any cluster. It can be 
 - [Take3 – get 3 free nodes of Portainer Business for as long as you want them](https://www.portainer.io/take-3)
 - [Portainer BE install guide](https://install.portainer.io)
 
+## Changes in this fork
+- Removed "Upgrade to Business Edition" component
+- Business feature now have low opacity
+
+## How to run dev in WSL
+1. Clone repo
+2. apt install (TODO)
+3. run `make deps`
+4. run `make dev`
+
+## Build image
+run
+```shell
+make build-image
+```
+
 ## Latest Version
 
 Portainer CE is updated regularly. We aim to do an update release every couple of months.

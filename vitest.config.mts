@@ -22,7 +22,7 @@ export default defineConfig({
     bail: 2,
     include: ['./app/**/*.test.ts', './app/**/*.test.tsx'],
     env: {
-      PORTAINER_EDITION: 'BE',
+      PORTAINER_EDITION: 'CE',
     },
     deps: {
       inline: [/@radix-ui/, /codemirror-json-schema/], // https://github.com/radix-ui/primitives/issues/2974#issuecomment-2186808459
