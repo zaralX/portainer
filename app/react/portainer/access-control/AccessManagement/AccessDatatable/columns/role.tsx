@@ -9,8 +9,9 @@ import { Select } from '@@/form-components/Input';
 import { Access, getTableMeta } from '../types';
 
 import { helper } from './helper';
+import { RoleService } from 'Portainer/rbac/services/role.service';
 
-export const role = helper.accessor('Role.Name', {
+export const role = helper.accessor('Role', {
   cell: RoleCell,
   header: 'Role',
   meta: {
@@ -26,20 +27,24 @@ function RoleCell({
   const meta = getTableMeta(table.options.meta);
   const type = item.Type as 'team' | 'user';
   const updateValue = meta.roles.getRoleValue(item.Id, type);
-  const role = getValue();
+  const roleId = Number(getValue());
 
   if (!getCanSelect()) {
-    return <>{role}</>;
+    return <>{roleId}</>;
   }
+
+  const roles = RoleService().roles();
+  const role = roles.find((r) => r.ID === roleId);
+  const roleName = role ? role.Name : 'Unknown';
 
   if (typeof updateValue === 'undefined') {
     return (
       <>
-        {role}
+        { roleName }
         <Button
           color="none"
           icon={Edit}
-          onClick={() => meta.roles.setRolesValue(item.Id, type, item.Role.Id)}
+          onClick={() => meta.roles.setRolesValue(item.Id, type, roleId)}
           data-cy="edit-role-button"
         >
           Edit

@@ -18,7 +18,61 @@ func (store *Store) Init() error {
 		return err
 	}
 
+	err = store.checkOrCreateDefaultRoles()
+	if err != nil {
+		return err
+	}
+
 	return store.checkOrCreateDefaultData()
+}
+
+func (store *Store) checkOrCreateDefaultRoles() error {
+	roles, err := store.RoleService.ReadAll()
+	if err != nil {
+		return err
+	}
+	if len(roles) == 0 {
+		defaultRoles := []portainer.Role{
+			{
+				ID:          1,
+				Name:        "Environment administrator",
+				Description: "Full control of all resources in an environment",
+				// Authorizations: заполните по необходимости
+				Priority: 1,
+			},
+			{
+				ID:          2,
+				Name:        "Helpdesk",
+				Description: "Read-only access of all resources in an environment",
+				Priority:    2,
+			},
+			{
+				ID:          3,
+				Name:        "Standard user",
+				Description: "Full control of assigned resources in an environment",
+				Priority:    3,
+			},
+			{
+				ID:          4,
+				Name:        "Read-only user",
+				Description: "Read-only access of assigned resources in an environment",
+				Priority:    4,
+			},
+			{
+				ID:          5,
+				Name:        "Operator",
+				Description: "Operational Control of all existing resources in an environment",
+				Priority:    5,
+			},
+		}
+		for _, role := range defaultRoles {
+			err := store.RoleService.Create(&role)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (store *Store) checkOrCreateDefaultSettings() error {

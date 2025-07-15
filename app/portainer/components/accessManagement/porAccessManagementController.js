@@ -38,13 +38,16 @@ class PorAccessManagementController {
     const entity = this.accessControlledEntity;
     const oldUserAccessPolicies = entity.UserAccessPolicies;
     const oldTeamAccessPolicies = entity.TeamAccessPolicies;
-    const selectedRoleId = this.formValues.selectedRole.Id;
+    const selectedRoleId = this.formValues.selectedRole.ID;
     const selectedUserAccesses = _.filter(this.formValues.multiselectOutput, (access) => access.Type === 'user');
     const selectedTeamAccesses = _.filter(this.formValues.multiselectOutput, (access) => access.Type === 'team');
+
+    console.log(selectedRoleId, selectedUserAccesses)
 
     const accessPolicies = this.AccessService.generateAccessPolicies(oldUserAccessPolicies, oldTeamAccessPolicies, selectedUserAccesses, selectedTeamAccesses, selectedRoleId);
     this.accessControlledEntity.UserAccessPolicies = accessPolicies.userAccessPolicies;
     this.accessControlledEntity.TeamAccessPolicies = accessPolicies.teamAccessPolicies;
+    console.log(accessPolicies, accessPolicies.userAccessPolicies, accessPolicies.teamAccessPolicies)
     this.updateAccess();
   }
 
@@ -61,11 +64,12 @@ class PorAccessManagementController {
   }
 
   isRoleLimitedToBE(role) {
-    if (!this.limitedToBE) {
-      return false;
-    }
-
-    return role.ID !== RoleTypes.STANDARD;
+    // if (!this.limitedToBE) {
+    //   return false;
+    // }
+    //
+    // return role.ID !== RoleTypes.STANDARD;
+    return false; // Unlimited :)
   }
 
   roleLabel(role) {

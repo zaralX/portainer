@@ -5,7 +5,7 @@ export function UserAccessViewModel(data) {
   this.Type = 'user';
   this.Inherited = false;
   this.Override = false;
-  this.Role = { Id: 0, Name: '-' };
+  this.Role = data.Role;
 }
 
 // create TeamAccessViewModel from TeamViewModel
@@ -15,5 +15,5 @@ export function TeamAccessViewModel(data) {
   this.Type = 'team';
   this.Inherited = false;
   this.Override = false;
-  this.Role = { Id: 0, Name: '-' };
+  this.Role = data.Role;
 }

@@ -6,7 +6,6 @@ import {
   TeamAccessViewModel,
   UserAccessViewModel,
 } from '@/portainer/models/access';
-import { isBE } from '@/react/portainer/feature-flags/feature-flags.service';
 
 import { Datatable } from '@@/datatables';
 import { createPersistedStore } from '@@/datatables/types';
@@ -68,7 +67,7 @@ export function AccessDatatable({
         <>
           <RemoveAccessButton items={selectedItems} onClick={onRemove} />
 
-          {isBE && isUpdateEnabled && (
+          {isUpdateEnabled && (
             <Button
               data-cy="update-access-button"
               icon={Check}
@@ -94,7 +93,7 @@ export function AccessDatatable({
               </div>
             </div>
           )}
-          {isBE && showWarning && isUpdateEnabled && (
+          {showWarning && isUpdateEnabled && (
             <TextTip>
               <div className="text-warning-9 th-highcontrast:text-warning-1 th-dark:text-warning-7">
                 Updating user access will require the affected user(s) to logout
