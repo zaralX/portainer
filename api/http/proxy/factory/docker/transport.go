@@ -435,6 +435,22 @@ func (transport *Transport) updateDefaultGitBranch(request *http.Request) error 
 func (transport *Transport) proxyImageRequest(request *http.Request, unversionedPath string) (*http.Response, error) {
 	requestPath := unversionedPath
 
+
+	// Delete images can only admin
+	if request.Method == http.MethodDelete && strings.HasPrefix(requestPath, "/images/") {
+        tokenData, err := security.RetrieveTokenData(request)
+        if err != nil {
+            log.Error().Err(err).Msg("Failed to retrieve token data for image delete")
+            return nil, err
+        }
+        log.Info().Str("user", tokenData.Username).Int("role", int(tokenData.Role)).Msg("Image DELETE attempt")
+
+        if tokenData.Role != portainer.AdministratorRole {
+            log.Warn().Str("user", tokenData.Username).Msg("Non-admin tried to delete image")
+            return utils.WriteAccessDeniedResponse()
+        }
+    }
+
 	switch requestPath {
 	case "/images/create":
 		return transport.replaceRegistryAuthenticationHeader(request)
