@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 
 import { withReactQuery } from '@/react-tools/withReactQuery';
 import { withCurrentUser } from '@/react-tools/withCurrentUser';
-import { ChartVersion } from '@/react/kubernetes/helm/queries/useHelmRepoVersions';
+import { ChartVersion } from '@/react/kubernetes/helm/helmChartSourceQueries/useHelmRepoVersions';
+import { EnvironmentId } from '@/react/portainer/environments/types';
 
 import { Modal, OnSubmit, openModal } from '@@/modals';
+import { confirm } from '@@/modals/confirm';
 import { Button } from '@@/buttons';
 import { Input } from '@@/form-components/Input';
 import { FormControl } from '@@/form-components/FormControl';
@@ -15,26 +17,32 @@ import { Option, PortainerSelect } from '@@/form-components/PortainerSelect';
 
 import { UpdateHelmReleasePayload } from '../../types';
 import { HelmValuesInput } from '../../components/HelmValuesInput';
-import { useHelmChartValues } from '../../queries/useHelmChartValues';
+import { useHelmChartValues } from '../../helmChartSourceQueries/useHelmChartValues';
+import { ManifestPreviewFormSection } from '../../components/ManifestPreviewFormSection';
 
 interface Props {
   onSubmit: OnSubmit<UpdateHelmReleasePayload>;
-  payload: UpdateHelmReleasePayload;
+  helmReleaseInitialValues: UpdateHelmReleasePayload;
+  releaseManifest: string;
   versions: ChartVersion[];
   chartName: string;
+  environmentId: EnvironmentId;
 }
 
 export function UpgradeHelmModal({
-  payload,
+  helmReleaseInitialValues,
+  releaseManifest,
   versions,
   onSubmit,
   chartName,
+  environmentId,
 }: Props) {
   const versionOptions: Option<ChartVersion>[] = versions.map((version) => {
-    const repo = payload.repo === version.Repo ? version.Repo : '';
+    const repo =
+      helmReleaseInitialValues.repo === version.Repo ? version.Repo : '';
     const isCurrentVersion =
-      version.AppVersion === payload.appVersion &&
-      version.Version === payload.version;
+      version.AppVersion === helmReleaseInitialValues.appVersion &&
+      version.Version === helmReleaseInitialValues.version;
 
     const label = `${repo}@${version.Version}${
       isCurrentVersion ? ' (current)' : ''
@@ -50,19 +58,35 @@ export function UpgradeHelmModal({
   const defaultVersion =
     versionOptions.find(
       (v) =>
-        v.value.AppVersion === payload.appVersion &&
-        v.value.Version === payload.version &&
-        v.value.Repo === payload.repo
+        v.value.AppVersion === helmReleaseInitialValues.appVersion &&
+        v.value.Version === helmReleaseInitialValues.version &&
+        v.value.Repo === helmReleaseInitialValues.repo
     )?.value || versionOptions[0]?.value;
   const [version, setVersion] = useState<ChartVersion>(defaultVersion);
-  const [userValues, setUserValues] = useState<string>(payload.values || '');
+  const [userValues, setUserValues] = useState<string>(
+    helmReleaseInitialValues.values || ''
+  );
   const [atomic, setAtomic] = useState<boolean>(true);
+  const [previewIsValid, setPreviewIsValid] = useState<boolean>(false);
 
   const chartValuesRefQuery = useHelmChartValues({
     chart: chartName,
     repo: version.Repo,
     version: version.Version,
   });
+
+  const submitPayload = useMemo(
+    () => ({
+      name: helmReleaseInitialValues.name,
+      values: userValues,
+      namespace: helmReleaseInitialValues.namespace,
+      chart: helmReleaseInitialValues.chart,
+      repo: version.Repo,
+      version: version.Version,
+      atomic,
+    }),
+    [helmReleaseInitialValues, userValues, version, atomic]
+  );
 
   return (
     <Modal
@@ -84,7 +108,7 @@ export function UpgradeHelmModal({
             >
               <Input
                 id="release-name-input"
-                value={payload.name}
+                value={helmReleaseInitialValues.name}
                 readOnly
                 disabled
                 data-cy="helm-release-name-input"
@@ -97,7 +121,7 @@ export function UpgradeHelmModal({
             >
               <Input
                 id="namespace-input"
-                value={payload.namespace}
+                value={helmReleaseInitialValues.namespace}
                 readOnly
                 disabled
                 data-cy="helm-namespace-input"
@@ -134,6 +158,15 @@ export function UpgradeHelmModal({
               valuesRef={chartValuesRefQuery.data?.values ?? ''}
               isValuesRefLoading={chartValuesRefQuery.isInitialLoading}
             />
+            <div className="mb-10">
+              <ManifestPreviewFormSection
+                payload={submitPayload}
+                onChangePreviewValidation={setPreviewIsValid}
+                title="Manifest changes"
+                currentManifest={releaseManifest}
+                environmentId={environmentId}
+              />
+            </div>
           </div>
         </Modal.Body>
       </div>
@@ -149,17 +182,19 @@ export function UpgradeHelmModal({
             Cancel
           </Button>
           <Button
-            onClick={() =>
-              onSubmit({
-                name: payload.name,
-                values: userValues,
-                namespace: payload.namespace,
-                chart: payload.chart,
-                repo: version.Repo,
-                version: version.Version,
-                atomic,
-              })
-            }
+            onClick={async () => {
+              if (!previewIsValid) {
+                const confirmed = await confirm({
+                  title: 'Chart validation failed',
+                  message:
+                    'The Helm manifest preview validation failed, which may indicate configuration issues. This can be normal when creating new resources. Do you want to proceed with the upgrade?',
+                });
+                if (!confirmed) {
+                  return;
+                }
+              }
+              onSubmit(submitPayload);
+            }}
             color="primary"
             key="update-button"
             size="medium"
@@ -174,12 +209,16 @@ export function UpgradeHelmModal({
 }
 
 export async function openUpgradeHelmModal(
-  payload: UpdateHelmReleasePayload,
-  versions: ChartVersion[]
+  helmReleaseInitialValues: UpdateHelmReleasePayload,
+  versions: ChartVersion[],
+  releaseManifest: string,
+  environmentId: EnvironmentId
 ) {
   return openModal(withReactQuery(withCurrentUser(UpgradeHelmModal)), {
-    payload,
+    helmReleaseInitialValues,
     versions,
-    chartName: payload.chart,
+    chartName: helmReleaseInitialValues.chart,
+    releaseManifest,
+    environmentId,
   });
 }

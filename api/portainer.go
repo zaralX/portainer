@@ -7,17 +7,18 @@ import (
 	"net/http"
 	"time"
 
+	gittypes "github.com/portainer/portainer/api/git/types"
+	models "github.com/portainer/portainer/api/http/models/kubernetes"
+	"github.com/portainer/portainer/api/roar"
+	"github.com/portainer/portainer/pkg/featureflags"
+	httperror "github.com/portainer/portainer/pkg/libhttp/error"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/api/types/volume"
-	gittypes "github.com/portainer/portainer/api/git/types"
-	models "github.com/portainer/portainer/api/http/models/kubernetes"
-	"github.com/portainer/portainer/pkg/featureflags"
-	httperror "github.com/portainer/portainer/pkg/libhttp/error"
 	"github.com/segmentio/encoding/json"
-
 	"golang.org/x/oauth2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/version"
@@ -265,12 +266,15 @@ type (
 	// EdgeGroup represents an Edge group
 	EdgeGroup struct {
 		// EdgeGroup Identifier
-		ID           EdgeGroupID  `json:"Id" example:"1"`
-		Name         string       `json:"Name"`
-		Dynamic      bool         `json:"Dynamic"`
-		TagIDs       []TagID      `json:"TagIds"`
-		Endpoints    []EndpointID `json:"Endpoints"`
-		PartialMatch bool         `json:"PartialMatch"`
+		ID           EdgeGroupID           `json:"Id" example:"1"`
+		Name         string                `json:"Name"`
+		Dynamic      bool                  `json:"Dynamic"`
+		TagIDs       []TagID               `json:"TagIds"`
+		EndpointIDs  roar.Roar[EndpointID] `json:"EndpointIds"`
+		PartialMatch bool                  `json:"PartialMatch"`
+
+		// Deprecated: only used for API responses
+		Endpoints []EndpointID `json:"Endpoints"`
 	}
 
 	// EdgeGroupID represents an Edge group identifier
@@ -1538,10 +1542,42 @@ type (
 
 	// GitService represents a service for managing Git
 	GitService interface {
-		CloneRepository(destination string, repositoryURL, referenceName, username, password string, tlsSkipVerify bool) error
-		LatestCommitID(repositoryURL, referenceName, username, password string, tlsSkipVerify bool) (string, error)
-		ListRefs(repositoryURL, username, password string, hardRefresh bool, tlsSkipVerify bool) ([]string, error)
-		ListFiles(repositoryURL, referenceName, username, password string, dirOnly, hardRefresh bool, includeExts []string, tlsSkipVerify bool) ([]string, error)
+		CloneRepository(
+			destination string,
+			repositoryURL,
+			referenceName,
+			username,
+			password string,
+			authType gittypes.GitCredentialAuthType,
+			tlsSkipVerify bool,
+		) error
+		LatestCommitID(
+			repositoryURL,
+			referenceName,
+			username,
+			password string,
+			authType gittypes.GitCredentialAuthType,
+			tlsSkipVerify bool,
+		) (string, error)
+		ListRefs(
+			repositoryURL,
+			username,
+			password string,
+			authType gittypes.GitCredentialAuthType,
+			hardRefresh bool,
+			tlsSkipVerify bool,
+		) ([]string, error)
+		ListFiles(
+			repositoryURL,
+			referenceName,
+			username,
+			password string,
+			authType gittypes.GitCredentialAuthType,
+			dirOnly,
+			hardRefresh bool,
+			includeExts []string,
+			tlsSkipVerify bool,
+		) ([]string, error)
 	}
 
 	// OpenAMTService represents a service for managing OpenAMT
@@ -1747,9 +1783,9 @@ type (
 
 const (
 	// APIVersion is the version number of the Portainer API
-	APIVersion = "2.32.0"
+	APIVersion = "2.33.0-rc1"
 	// Support annotation for the API version ("STS" for Short-Term Support or "LTS" for Long-Term Support)
-	APIVersionSupport = "STS"
+	APIVersionSupport = "LTS"
 	// Edition is what this edition of Portainer is called
 	Edition = PortainerCE
 	// ComposeSyntaxMaxVersion is a maximum supported version of the docker compose syntax
@@ -1758,8 +1794,10 @@ const (
 	AssetsServerURL = "https://portainer-io-assets.sfo2.digitaloceanspaces.com"
 	// MessageOfTheDayURL represents the URL where Portainer MOTD message can be retrieved
 	MessageOfTheDayURL = AssetsServerURL + "/motd.json"
+	// ReleasesURL represents the URL used to retrieve all releases of Portainer
+	ReleasesURL = "https://api.github.com/repos/portainer/portainer/releases"
 	// VersionCheckURL represents the URL used to retrieve the latest version of Portainer
-	VersionCheckURL = "https://api.github.com/repos/portainer/portainer/releases/latest"
+	VersionCheckURL = ReleasesURL + "/latest"
 	// PortainerAgentHeader represents the name of the header available in any agent response
 	PortainerAgentHeader = "Portainer-Agent"
 	// PortainerAgentEdgeIDHeader represent the name of the header containing the Edge ID associated to an agent/agent cluster

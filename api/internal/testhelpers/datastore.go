@@ -230,11 +230,11 @@ func (s *stubEndpointRelationService) UpdateEndpointRelation(ID portainer.Endpoi
 	return nil
 }
 
-func (s *stubEndpointRelationService) AddEndpointRelationsForEdgeStack(endpointIDs []portainer.EndpointID, edgeStackID portainer.EdgeStackID) error {
+func (s *stubEndpointRelationService) AddEndpointRelationsForEdgeStack(endpointIDs []portainer.EndpointID, edgeStack *portainer.EdgeStack) error {
 	for _, endpointID := range endpointIDs {
 		for i, r := range s.relations {
 			if r.EndpointID == endpointID {
-				s.relations[i].EdgeStacks[edgeStackID] = true
+				s.relations[i].EdgeStacks[edgeStack.ID] = true
 			}
 		}
 	}
@@ -459,4 +459,40 @@ func WithStacks(stacks []portainer.Stack) datastoreOption {
 	return func(d *testDatastore) {
 		d.stack = &stubStacksService{stacks: stacks}
 	}
+}
+
+type stubPendingActionService struct {
+	actions []portainer.PendingAction
+	dataservices.PendingActionsService
+}
+
+func WithPendingActions(pendingActions []portainer.PendingAction) datastoreOption {
+	return func(d *testDatastore) {
+		d.pendingActionsService = &stubPendingActionService{
+			actions: pendingActions,
+		}
+	}
+}
+
+func (s *stubPendingActionService) ReadAll(predicates ...func(portainer.PendingAction) bool) ([]portainer.PendingAction, error) {
+	filtered := s.actions
+
+	for _, predicate := range predicates {
+		filtered = slicesx.Filter(filtered, predicate)
+	}
+
+	return filtered, nil
+}
+
+func (s *stubPendingActionService) Delete(ID portainer.PendingActionID) error {
+	actions := []portainer.PendingAction{}
+
+	for _, action := range s.actions {
+		if action.ID != ID {
+			actions = append(actions, action)
+		}
+	}
+	s.actions = actions
+
+	return nil
 }
